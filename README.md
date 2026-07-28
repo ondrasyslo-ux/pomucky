@@ -1,60 +1,113 @@
-# 📚 C++ Tahák a Architektura Projektu
+# 📚 C++ Tahák: Architektura, Operátory a Algoritmy
 
-Tento dokument slouží jako průvodce zkouškovým projektem. Kopíruje strukturu zadání a vysvětluje klíčové koncepty, které je nutné u zkoušky dodržet a chápat.
-
-## 1. Pravidla zápisu: Hlavička (.h) vs. Logika (.cpp)
-
-| Vlastnost | Hlavičkový soubor (`.h`) | Zdrojový soubor (`.cpp`) |
-| :--- | :--- | :--- |
-| **Účel** | Deklarace (co třída umí). "Jídelní lístek". | Implementace (jak to dělá). Samotný kód. |
-| **Základ** | Vždy začíná direktivou `#pragma once`. | Vždy includuje svou hlavičku `#include "Trida.h"`. |
-| **Tělo** | `class Nazev { ... };` (pozor na středník!). | Metody mají předponu: `void Nazev::metoda()`. |
-| **Klíčová slova** | Píše se sem `virtual`, `override`, `friend`, `static`. | Tato slova se sem už **nepíší**! |
+Tento dokument slouží jako komplexní průvodce pro zkouškový projekt. Shrnuje pravidla rozdělení kódu, syntaxi operátorů a bezpečnou práci s pamětí a vektory.
 
 ---
 
-## 2. Bázová třída (Abstraktní)
-Představuje obecný základ programu (např. `Senzor`). Nelze z ní vytvořit přímý objekt, slouží pouze jako šablona pro potomky.
+## 1. Pravidla zápisu: Hlavička (.h) vs. Logika (.cpp)
 
-* **Zapouzdření (`protected`):** Proměnné (jako označení nebo vektor s historií) musí být `protected`, nikoliv `private`, aby k nim měly odvozené třídy přímý přístup.
-* **Statické členy (`static`):** Proměnná (např. čítač) existuje v paměti jen jednou a všechny objekty ji sdílejí. V hlavičce se pouze deklaruje, fyzicky se musí inicializovat v `.cpp` souboru mimo jakoukoliv funkci (zápisem `int Senzor::citac = 0;`).
-* **Virtuální metody (`virtual`):** Umožňují polymorfismus. Překladač díky nim za běhu pozná, že má u potomka zavolat jeho upravenou verzi metody a ne tu základní.
-* **Čistě virtuální metoda (`= 0`):** Píše se jako `virtual void analyzuj() const = 0;`. Definuje, že třída je abstraktní a každý potomek tuto metodu **musí** povinně naprogramovat.
-* **Virtuální destruktor:** Bázová třída s dědičností musí mít `virtual ~Senzor();`, jinak při mazání pole neproběhne uvolnění dat potomků a vznikne únik paměti (memory leak).
+Při psaní objektově orientovaného kódu se třídy rozdělují do dvou souborů:
+*   **Hlavičkový soubor (`.h`):** Slouží jako deklarace (co třída umí). Definuje se zde samotné tělo třídy a hlavičky metod.
+*   **Zdrojový soubor (`.cpp`):** Obsahuje samotnou logiku a implementaci metod. Před názvem každé metody musí být uveden název třídy s dvojitou dvojtečkou (např. `Senzor::vypisInfo()`).
+
+---
+
+## 2. Bázová třída (Základní šablona)
+
+Bázová třída definuje společné vlastnosti pro všechny odvozené objekty. 
+
+**V hlavičce (`.h`):**
+*   Tělo konstruktoru (přijímá parametr jména a případně další vlastní proměnné).
+*   Destruktor (musí být `virtual`, aby fungovalo správné smazání u potomků).
+*   Gettery (např. pro získání čítače nebo historie).
+*   Obyčejné virtuální metody (zapisují se bez parametrů, např. `virtual void vypisInfo() const;`).
+
+**V implementaci (`.cpp`):**
+*   Úplně na začátku souboru (mimo metody) se musí implementovat/inicializovat statické počítadlo: `int Senzor::citac = 0;`.
+*   V samotném konstruktoru se řeší zvýšení počítadla, v destruktoru jeho snížení.
+*   Přidávací metoda na konec vektoru využívá `push_back(hodnota)`.
+*   Přetížená verze přidávací metody (pro celý vektor hodnot) využívá `insert` a prochází vlastní proměnnou od začátku do konce.
+*   Výpis počtu prvků historie se řeší přes metodu `size()`.
 
 ---
 
 ## 3. Odvozené třídy (Dědičnost)
-Konkrétní specializované implementace (např. `SenzorTeploty`, `SenzorVlhkosti`).
 
-* **Zápis dědičnosti:** Píše se rovnou za název třídy v hlavičce: `class SenzorTeploty : public Senzor`.
-* **Konstruktor:** Musí v inicializační listině vždy nejdříve předat parametry konstruktoru rodiče. Příklad v `.cpp`: `SenzorTeploty(string id) : Senzor(id) {}`.
-* **Přepisování metod (`override`):** Pokud třída upravuje chování virtuální metody rodiče, doplňuje se na konec deklarace v hlavičce slovo `override`. Překladač díky tomu ohlídá překlepy.
+Konkrétní specializované implementace, které rozšiřují bázovou třídu.
+
+**V hlavičce (`.h`):**
+*   Dědičnost se zapisuje rovnou k definici třídy: `class SpecifickySenzor : public Senzor`.
+*   U metod, které se přepisují z bázové třídy, se na konec přidává klíčové slovo `override`.
+
+**V implementaci (`.cpp`):**
+*   Konstruktor musí nejprve zavolat bázovou třídu a předat jí název, a až poté inicializovat svou vlastní proměnnou: 
+    `SpecifickySenzor(string nazev, double hodnota) : Senzor(nazev), vlastniPromenna(hodnota) {}`
+*   Ve vlastní upravené metodě pro výpis je dobré zavolat nejprve výpis z bázové třídy (např. `Senzor::vypisInfo();`) a pak vypsat specifika daného potomka.
+*   Při procházení historie se využívá range-based for cyklus: `for(typ kamUlozim : coProjizdim)`.
 
 ---
 
 ## 4. Přetěžování operátorů
-Učí jazyk C++ pracovat s našimi vlastními objekty pomocí běžných znaků.
 
-* **Operátor `==` (Porovnání):** Patří do třídy (člen). Vrací `bool` a nemění objekt (na konci má `const`). Porovnává vnitřní data s daty druhého objektu předaného přes referenci.
-* **Operátor `+=` (Změna objektu):** Patří do třídy (člen). Vrací referenci na sebe sama (`return *this;`), aby šly operace v kódu řetězit.
-* **Operátor `<<` (Výpis do proudu):** **Nepatří** třídě, protože levá strana (např. `std::cout`) je typu `ostream`. Musí být deklarován jako `friend` uvnitř `.h` souboru. V `.cpp` se u něj nepíše čtyřtečka s názvem třídy. Vrací proud (`return os;`).
+Umožňuje používat standardní matematické a logické znaky pro naše vlastní objekty.
 
----
+**V hlavičce (`.h`):**
+*   `bool operator==(SenzorTeploty& A) const;` (Porovnání - vrací ano/ne).
+*   `SenzorTeploty& operator+=(double hodnota);` (Přidání - upravuje objekt).
+*   `friend std::ostream& operator<<(std::ostream& os, const SenzorTeploty& promena);` (Výpis do konzole).
 
-## 5. Algoritmy a Iterátory
-Zásady pro bezpečnou práci s daty uvnitř kolekce (`std::vector`).
-
-* **Reference (`&`):** Pokud má algoritmus upravovat původní data objektu, getter musí vracet přímý přístup do paměti, nikoliv kopii: `std::vector<double>& getHistorie()`.
-* **Range-based for cyklus:** Zápis `for(double hodnota : data)` je bezpečný a nejrychlejší způsob, jak pouze přečíst celou historii od začátku do konce bez nutnosti hlídat indexy.
-* **Mazání prvků (`.erase`):** Při mazání prvků během procházení se nesmí použít klasický for cyklus, přeskočily by se položky. Používá se iterátor (`auto it = data.begin()`). Pokud dojde ke smazání, metoda `.erase(it)` bezpečně zalepí díru a sama vrátí nový, správně posunutý iterátor.
+**V implementaci (`.cpp`):**
+*   **Porovnání (`==`):** Má předponu třídy. Vrací výsledek porovnání s využitím ukazatele na sebe sama: `return this->podminka == A.podminka;`
+*   **Přidání (`+=`):** Má předponu třídy. Zavolá standardní přidávací metodu a na konci vrací referenci na aktuální objekt: `return *this;`
+*   **Výpis (`<<`):** Píše se **bez** předpony třídy a **bez** slova friend. Formátuje se klasicky přes proud: `os << ... << promena.jmeno << ...`. Na konci vrací proud: `return os;`
 
 ---
 
-## 6. Hlavní program a Správa paměti (`main.cpp`)
-Propojení všech pilířů dohromady přes polymorfismus.
+## 5. Knihovna `std::vector` (Základní příkazy)
 
-* **Vektor ukazatelů:** Vytváří se typem `std::vector<Senzor*> senzory;`. Uchovává pouze adresy, nikoliv celé objekty. Jen díky tomu do něj lze vkládat rozdílné potomky.
-* **Dynamická alokace (`new`):** Objekty se vytvářejí dynamicky na haldě: `senzory.push_back(new SenzorTeploty(...));`.
-* **Operátor šipky (`->`):** Při procházení vektoru ukazatelů se nepoužívá klasická tečka, ale šipka (např. `s->vypisInfo()`). Je to zkratka pro dereferenci adresy a zavolání metody zároveň.
-* **Uvolnění paměti (`delete`):** Vektor ukazatelů sám o sobě vytvořené objekty nevymaže. Na konci programu musí být vždy cyklus, který zavolá `delete` pro každý jednotlivý prvek.
+Přehled metod pro práci s kolekcemi (např. historií měření):
+*   `size()` - Vrátí celkový počet prvků uvnitř vektoru.
+*   `begin()` - Vrátí iterátor (ukazatel) na úplně první prvek.
+*   `end()` - Vrátí iterátor na konec (za poslední prvek).
+*   `push_back(X)` - Vloží hodnotu X na úplný konec vektoru.
+*   `insert(...)` - Vloží více prvků na specifikované místo.
+*   `erase(it)` - Bezpečně smaže prvek na pozici iterátoru a posune zbytek dat.
+
+---
+
+## 6. Algoritmy
+
+Algoritmy se volají z mainu přímo na konkrétní prvek vektoru: `nazevVektoru[index]->funkce()`.
+
+**Algoritmus 1: Procházení (např. hledání nejdelší řady)**
+*   Funkce přijímá ukazatel: `void algoritmus1(Senzor* s)`
+*   Využívá klasický for cyklus `for(double hodnota : s->getHistorie())` a podmínkami porovnává hodnoty.
+
+**Algoritmus 2: Podmíněné mazání (`erase`)**
+1. Načtení dat před mazáním: `nazev[0]->getHistorie().size()` a výpis.
+2. Ve funkci se musí vytvořit přímá reference na vektor, **nikoliv kopie**! 
+   `std::vector<double>& vektor = s->getHistorie();`
+3. Cyklus prochází vektor přes iterátor:
+   `for(auto it = vektor.begin(); it != vektor.end(); /* bez posunu */)`
+4. Uvnitř se řeší dereference `*it` a samotné mazání:
+   ```cpp
+   if(*it < 0 && *it > -5) {
+       it = vektor.erase(it); // Smaže a vrátí novou pozici
+   } else {
+       ++it; // Posune se dál, jen pokud se nemazalo
+   }
+
+## 7. Hlavní program (`main.cpp`) a Projetí mainu
+
+Celá funkce `main` musí mít jasnou chronologickou strukturu, aby správně otestovala všechny vlastnosti (polymorfismus, operátory, algoritmy) a zamezila úniku paměti. 
+
+**Chronologický postup (kostra mainu):**
+
+1.  **Ověření výchozího stavu:** Výpis statického čítače (měl by být 0).
+2.  **Vytvoření struktury a alokace:** Vytvoří se `std::vector<Senzor*>`, do kterého se přes `new` vloží různé odvozené objekty.
+3.  **Naplnění daty:** Přes indexy a operátor šipky se zavolá vkládací metoda (např. `vektor[0]->pridejHodnotu(...)`).
+4.  **Polymorfní průchod (Hlavní cyklus):** Klasický for cyklus projde vektor a zavolá virtuální metody. Díky polymorfismu se každý prvek zachová podle svého skutečného typu.
+5.  **Spuštění algoritmů:** Zavolají se externí funkce (např. pro mazání) a předá se jim konkrétní ukazatel z vektoru (např. `algoritmus(vektor[0])`).
+6.  **Test operátorů:** Vytvoří se lokální proměnné (na zásobníku), provede se test operátorů `+=` a `==` a jejich výpis `<<`.
+7.  **Úklid paměti (`delete`):** Než program skončí, musí se projít původní vektor ukazatelů a ručně smazat alokovaná data.
+8.  **Závěrečná kontrola:** Výpis čítače musí ukázat opět 0.
