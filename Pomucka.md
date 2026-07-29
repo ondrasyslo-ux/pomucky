@@ -33,11 +33,13 @@ Bázová třída definuje společné vlastnosti pro všechny odvozené objekty.
 *   Destruktor (musí mít klíčové slovo `virtual`, aby fungovalo správné smazání u potomků z paměti).
 *   Gettery (vracejí chráněná data).
 *   Obyčejné virtuální metody (zapisují se bez parametrů, např. `virtual void vypisInfo() const;`).
+*   Deklarace metod pro přidávání dat (normální pro jednu hodnotu a přetížená pro celý vektor).
 
 **V implementaci (`.cpp`):**
 *   Úplně na začátku souboru (mimo metody) se musí inicializovat statické počítadlo: `int BazovaTrida::citac = 0;`.
 *   V samotném konstruktoru se řeší zvýšení počítadla (`citac++`), v destruktoru jeho snížení (`citac--`).
-
+*   **Přidávání dat do vektoru (Normální metoda):** Předaný vlastní parametr se prostě hodí na úplný konec vektoru pomocí `push_back`.
+*   **Přidávání dat do vektoru (Přetížená metoda):** Slouží k vložení více hodnot naráz. Jede se přes metodu `insert`, která má formát: `(konec hlavního vektoru, začátek vl. vektoru(para), konec vl. vektoru)`.
 ---
 
 ## 4. Odvozené třídy (Dědičnost / Potomek)
