@@ -1,4 +1,4 @@
-# 📚 C++ Tahák: Architektura, Operátory a Algoritmy
+# 📚 C++  Architektura, Operátory a Algoritmy
 
 Tento dokument slouží jako komplexní průvodce pro zkouškový projekt. Shrnuje pravidla rozdělení kódu, syntaxi operátorů a bezpečnou práci s pamětí a vektory.
 
