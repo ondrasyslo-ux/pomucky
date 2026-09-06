@@ -1,25 +1,36 @@
 # ⚡ Vektory a Operátory
 
 ## 1. Práce s vektory (`std::vector`)
-Základní operace s vektorem pro rychlé použití v algoritmech a metodách:
-
-* **`vektor.push_back(hodnota)`** – Vloží jeden prvek úplně na konec.
-* **`vektor.insert(vektor.end(), jiny.begin(), jiny.end())`** – Vloží celý jiný vektor na konec aktuálního.
-* **`vektor.size()`** – Vrátí aktuální počet prvků (často se hodí pro výpisy a cykly).
-* **`vektor.back()`** – Vrátí hodnotu úplně **posledního prvku** ve vektoru. *(Pozor: před zavoláním `back()` by měl mít vektor velikost alespoň 1, jinak program spadne).*
-* **`vektor.erase(iterator)`** – Smaže prvek, na který ukazuje iterátor (typicky se používá uvnitř cyklu s iterátory).
+Základní operace pro rychlé použití v algoritmech a metodách:
+*   `vektor.push_back(hodnota)` – Vloží prvek úplně na konec.
+*   `vektor.insert(vektor.end(), jiny.begin(), jiny.end())` – Vloží celý jiný vektor na konec aktuálního.
+*   `vektor.size()` – Vrátí aktuální počet prvků (hodí se pro výpisy a cykly).
+*   `vektor.back()` – Vrátí hodnotu úplně posledního prvku ve vektoru. *(Pozor: Před zavoláním by měl mít vektor velikost alespoň 1, jinak program spadne).*
+*   `vektor.erase(iterator)` – Smaže prvek, na který ukazuje iterátor (typicky se používá uvnitř cyklu).
 
 ---
 
-## 2. Přetěžování operátorů (Slovníček)
-Co jednotlivé operátory dělají a jak u nich funguje `const`:
+## 2. Přetěžování operátorů (Přehled a .h deklarace)
 
 | Operátor | K čemu slouží v praxi | Pravidla pro `const` (Deklarace v `.h`) |
 | :--- | :--- | :--- |
-| **`==`** | **Porovnání na shodu:** Určuje, podle čeho poznáme, že jsou dva objekty totožné. | Čte obě strany. `const` je všude:<br>`bool operator==(const Trida& pravy) const;` |
-| **`<`** | **Menší než / Řazení:** Definuje, který objekt je menší (nutné pro `std::sort`). | Čte obě strany. `const` je všude:<br>`bool operator<(const Trida& pravy) const;` |
-| **`+=`** | **Přidání / Sloučení:** Přičte hodnotu k aktuálnímu objektu. Vrací referenci na sebe `*this`, aby šlo řetězit. | Mění sebe, čte pravou stranu:<br>`Trida& operator+=(const Trida& pravy);` (nebo např. `double v`) |
-| **`<<`** | **Výpis do proudu:** Učí objekt, jak se má sám vypsat přes `std::cout`. | Externí funkce (friend), jen čte objekt:<br>`friend std::ostream& operator<<(std::ostream& os, const Trida& obj);` |
-| **`()`** | **Funktor:** Dovoluje zavolat samotný objekt, jako by to byla funkce (např. `mujObjekt(15)`). | Dle toho, zda volání mění stav objektu. |
-| **`=`** | **Přiřazení:** Říká, co se stane při `A = B` (nutné řešit tzv. hlubokou kopii, pokud máme v paměti ukazatele). | Mění levou stranu, čte pravou:<br>`Trida& operator=(const Trida& pravy);` |
-| **`[]`** | **Indexace:** Přístup k datům objektu jako k poli (např. `mojeTrida[3]`). | Vrací referenci, často má 2 verze (s `const` i bez). |
+| `==` | **Porovnání na shodu:** Určuje, podle čeho poznáme, že jsou dva objekty totožné. | Čte obě strany, `const` je všude:<br>`bool operator==(const Trida& pravy) const;` |
+| `<` | **Menší než:** Definuje, který objekt je menší (nutné pro `std::sort`). | Čte obě strany, `const` je všude:<br>`bool operator<(const Trida& pravy) const;` |
+| `+=` | **Přidání / Sloučení:** Přičte hodnotu k aktuálnímu objektu. Vrací referenci na `*this` pro řetězení. | Mění sebe, čte pravou stranu:<br>`Trida& operator+=(const Trida& pravy);` (nebo např. `double v`) |
+| `<<` | **Výpis do proudu:** Učí objekt, jak se má sám vypsat přes `std::cout`. | Externí funkce (`friend`), jen čte objekt:<br>`friend std::ostream& operator<<(std::ostream& os, const Trida& obj);` |
+| `()` | **Funktor:** Dovoluje zavolat objekt jako funkci (např. `mujObjekt(15)`). | Záleží na tom, zda volání mění stav objektu. |
+| `=` | **Přiřazení:** Řeší hlubokou kopii při `A = B` (nutné, pokud jsou v paměti ukazatele). | Mění levou stranu, čte pravou:<br>`Trida& operator=(const Trida& pravy);` |
+| `[]` | **Indexace:** Přístup k datům jako k poli (např. `objekt[3]`). | Vrací referenci, často má verzi s `const` i bez. |
+
+---
+## 3. Implementace a použití v praxi
+
+| Operátor | Deklarace v `.h` | Implementace v `.cpp` | Použití v `main()` |
+| :---: | :--- | :--- | :--- |
+| **`==`** | `bool operator==(const Stanice& pravy) const;` | `bool Stanice::operator==(const Stanice& pravy) const {`<br>&nbsp;&nbsp;`return this->smog == pravy.smog;`<br>`}` | `if (s1 == s2) {`<br>&nbsp;&nbsp;`std::cout << "Shoda";`<br>`}` |
+| **`+=`** | `Stanice& operator+=(double novaTeplota);` | `Stanice& Stanice::operator+=(double novaTeplota) {`<br>&nbsp;&nbsp;`this->historie.push_back(novaTeplota);`<br>&nbsp;&nbsp;`return *this;`<br>`}` | `Stanice s("Brno");`<br>`s += 25.5;`<br>`s += -3.0;` |
+| **`<<`** | `friend std::ostream& operator<<(std::ostream& os, const Stanice& obj);` | `std::ostream& operator<<(std::ostream& os, const Stanice& obj) {`<br>&nbsp;&nbsp;`os << "Stanice: " << obj.oznaceni;`<br>&nbsp;&nbsp;`return os;`<br>`}` | `Stanice s("Praha");`<br>`std::cout << s;` |
+| **`<`** | `bool operator<(const Stanice& pravy) const;` | `bool Stanice::operator<(const Stanice& pravy) const {`<br>&nbsp;&nbsp;`return this->smog < pravy.smog;`<br>`}` | `if (s1 < s2) {`<br>&nbsp;&nbsp;`std::cout << "S1 je cistsi";`<br>`}` |
+| **`=`** | `Stanice& operator=(const Stanice& pravy);` | `Stanice& Stanice::operator=(const Stanice& pravy) {`<br>&nbsp;&nbsp;`if (this != &pravy) {`<br>&nbsp;&nbsp;&nbsp;&nbsp;`this->smog = pravy.smog;`<br>&nbsp;&nbsp;`<br>&nbsp;&nbsp;`return *this;`<br>`}` | `Stanice s1("Brno");`<br>`Stanice s2("Praha");`<br>`s1 = s2;` |
+| **`[]`** | `double& operator[](int index);` | `double& Stanice::operator[](int index) {`<br>&nbsp;&nbsp;`return this->historie[index];`<br>`}` | `Stanice s("Ostrava");`<br>`s += 25.5;`<br>`double t = s[0];` |
+| **`()`** | `void operator()(double zmena);` | `void Stanice::operator()(double zmena) {`<br>&nbsp;&nbsp;`this->smog += zmena;`<br>`}` | `Stanice s("Opava");`<br>`s(1.5);` |
