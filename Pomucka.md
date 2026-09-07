@@ -1,6 +1,6 @@
-# 📚 C++ Architektura, Operátory a Algoritmy (Obecný tahák)
+# 📚 C++ Architektura, Operátory a Algoritmy (Hlavní tahák)
 
-Tento dokument slouží jako univerzální průvodce pro objektově orientované zkouškové projekty v C++. Shrnuje pravidla rozdělení kódu, syntaxi operátorů a bezpečnou práci s pamětí.
+Tento dokument slouží jako univerzální průvodce pro objektově orientované zkouškové projekty v C++. Shrnuje pravidla rozdělení kódu, syntaxi operátorů, algoritmy a bezpečnou práci s pamětí.
 
 ---
 
@@ -18,7 +18,6 @@ Klíčové slovo `const` se v třídách používá na dvou místech. **Co slíb
 
 ## 2. Pravidla zápisu: Hlavička (.h) vs. Logika (.cpp)
 
-Při psaní kódu se třídy rozdělují do dvou souborů:
 *   **Hlavičkový soubor (`.h`):** Slouží jako deklarace. Definuje se zde samotné tělo třídy a hlavičky metod (bez jejich vnitřní logiky).
 *   **Zdrojový soubor (`.cpp`):** Obsahuje samotnou logiku. Před názvem každé metody musí být uveden název třídy s dvojitou dvojtečkou (např. `BazovaTrida::vypisInfo()`), aby překladač věděl, kam metoda patří. Uvnitř `.h` souboru se čtyřtečka nikdy nepíše!
 
@@ -29,7 +28,7 @@ Při psaní kódu se třídy rozdělují do dvou souborů:
 Bázová třída definuje společné vlastnosti pro všechny odvozené objekty. 
 
 **V hlavičce (`.h`):**
-*   Konstruktor (přijímá základní parametry, typicky jméno/označení).
+*   Konstruktor (přijímá základní parametry, typicky `std::string nazev`).
 *   Destruktor (musí mít klíčové slovo `virtual`, aby fungovalo správné smazání u potomků z paměti).
 *   Gettery (vracejí chráněná data).
 *   Obyčejné virtuální metody (zapisují se bez parametrů, např. `virtual void vypisInfo() const;`).
@@ -37,9 +36,11 @@ Bázová třída definuje společné vlastnosti pro všechny odvozené objekty.
 
 **V implementaci (`.cpp`):**
 *   Úplně na začátku souboru (mimo metody) se musí inicializovat statické počítadlo: `int BazovaTrida::citac = 0;`.
-*   V samotném konstruktoru se řeší zvýšení počítadla (`citac++`), v destruktoru jeho snížení (`citac--`).
+*   Konstruktor: Atributy (jako je název) se nastavují hned za závorkou přes dvojtečku: `BazovaTrida(string oznaceni) : nazev(oznaceni)`. Řeší se zde také zvýšení počítadla (`citac++`).
+*   Destruktor: Řeší se snížení počítadla (`citac--`).
 *   **Přidávání dat do vektoru (Normální metoda):** Předaný vlastní parametr se prostě hodí na úplný konec vektoru pomocí `push_back`.
 *   **Přidávání dat do vektoru (Přetížená metoda):** Slouží k vložení více hodnot naráz. Jede se přes metodu `insert`, která má formát: `(konec hlavního vektoru, začátek vl. vektoru(para), konec vl. vektoru)`.
+
 ---
 
 ## 4. Odvozené třídy (Dědičnost / Potomek)
@@ -51,15 +52,9 @@ Specializované implementace, které rozšiřují bázovou třídu.
 *   U metod, které se přepisují z bázové třídy, se na konec přidává klíčové slovo `override`.
 
 **V implementaci (`.cpp`) - Konstruktor a předávání dat:**
-*   Konstruktor potomka dostane parametry od uživatele. Část z nich (např. jméno) musí poslat rovnou "nahoru" rodiči do bázové třídy, a zbytek si uloží do svých vlastních proměnných.
-    ```cpp
-    // 'hodnotaProRodice' se jen předává dál (do BazovaTrida),
-    // 'vlastniHodnota' je nová proměnná, kterou si ukládáme do atributu 'vlastniAtribut'.
-    OdvozenaTrida::OdvozenaTrida(const std::string& hodnotaProRodice, double vlastniHodnota) 
-        : BazovaTrida(hodnotaProRodice), vlastniAtribut(vlastniHodnota) { 
-        // Tělo konstruktoru zůstává většinou prázdné
-    }
-    ```
+*   Konstruktor potomka bere v parametrech typicky `string` pro bázovou třídu a pak *své vlastní proměnné* (neveme vektor!).
+*   V implementaci `.cpp` musí závorka obsahovat všechny parametry. Část z nich (např. jméno) se pošle rovnou "nahoru" rodiči a zbytek si potomek uloží.
+    `OdvozenaTrida::OdvozenaTrida(const std::string& jmeno, double hodnota) : BazovaTrida(jmeno), vlastniPromenna(hodnota) {}`
 *   Ve vlastní upravené metodě pro výpis je dobré zavolat nejprve výpis z bázové třídy (např. `BazovaTrida::vypisInfo();`) a pak vypsat specifika daného potomka.
 
 ---
@@ -72,36 +67,54 @@ Umožňuje používat standardní matematické a logické znaky pro naše vlastn
 *   `bool operator==(const OdvozenaTrida& druhyObjekt) const;` (Porovnání - vrací ano/ne. Pozor na obě `const`!).
 *   `OdvozenaTrida& operator+=(double novaHodnota);` (Přidání - upravuje aktuální objekt, vrací referenci).
 *   `friend std::ostream& operator<<(std::ostream& os, const OdvozenaTrida& objektKterovyVypisuji);` (Výpis do konzole - `friend` umožňuje přístup k privátním datům).
+*   `double& operator[](int index);` (Indexace - vrací referenci na prvek na konkrétní pozici).
+*   `void operator()(double zmena);` (Funktor - zavolá objekt jako funkci pro rychlou úpravu jeho vnitřních dat).
 
 **V implementaci (`.cpp`):**
-*   **Porovnání (`==`):** Má předponu třídy (čtyřtečku). Vrací výsledek porovnání s využitím ukazatele na sebe sama: 
-    `return this->vlastniAtribut == druhyObjekt.vlastniAtribut;`
-*   **Přidání (`+=`):** Má předponu třídy. Modifikuje vnitřní data a na konci vrací referenci na aktuální objekt: 
-    `return *this;`
-*   **Výpis (`<<`):** Píše se **bez** předpony třídy (bez čtyřtečky) a **bez** slova `friend`. Formátuje se klasicky přes proud: 
-    `os << "Text " << objektKterovyVypisuji.vlastniAtribut;` a na konci vrací proud: `return os;`
+*   **Porovnání (`==`):** Má předponu třídy (čtyřtečku). Vrací výsledek porovnání s využitím ukazatele na sebe sama: `return this->vlastniAtribut == druhyObjekt.vlastniAtribut;`
+*   **Přidání (`+=`):** Má předponu třídy. Modifikuje vnitřní data a na konci vrací referenci na aktuální objekt: `return *this;`
+*   **Výpis (`<<`):** Píše se **bez** předpony třídy (bez čtyřtečky) a **bez** slova `friend`. Formátuje se klasicky přes proud: `os << "Text " << objektKterovyVypisuji.vlastniAtribut;` a na konci vrací proud: `return os;`
+*   **Indexace (`[]`):** Má předponu třídy. Šáhne do chráněného vektoru a vrátí hodnotu na pozici indexu: `return this->historie[index];`
+*   **Funktor (`()`):** Má předponu třídy. Provede požadovanou matematickou operaci nad vlastním atributem (např. `this->vlastniAtribut += zmena;`). Nic nevrací, pokud je typ `void`.
 
 ---
 
 ## 6. Algoritmy (Volné funkce v mainu)
 
-Algoritmy se píšou jako běžné funkce nad `main()` a jako parametr obvykle dostávají ukazatel na bázovou třídu, aby fungovaly pro všechny potomky díky polymorfismu.
+Algoritmy se píšou jako běžné funkce nad `main()` a jako parametr obvykle dostávají ukazatel na bázovou třídu, aby fungovaly pro všechny potomky (polymorfismus). Přistupuje se k nim přes šipku (`s->getHistorie()`).
 
-*   Funkce přijímá ukazatel: `typNavratu nazevAlgoritmu(BazovaTrida* parametrBaze)`
-*   Uvnitř funkce se přes parametr přistupuje k datům objektu (pomocí šipky `->`, např. `parametrBaze->getData()`).
 *   **Pozor u mazání:** Pokud algoritmus upravuje strukturu dat (např. maže prvky a nevrací hodnotu, tedy je typu `void`), nesmí se jeho volání dávat přímo do `std::cout <<`. Zavolá se na samostatném řádku a teprve poté se vypíše nový stav objektu.
+
+**Algoritmus 1: Procházení a vyhodnocování (např. nejdelší řada)**
+*   Funkce přijímá ukazatel: `void algoritmus1(Senzor* s)`
+*   Využívá range-based for cyklus: `for(double hodnota : s->getHistorie())`.
+*   Uvnitř cyklu se podmínkami porovnávají hodnoty (hledání extrémů, počítání posloupnosti).
+
+**Algoritmus 2: Podmíněné mazání (`erase`)**
+1. Ve funkci se musí vytvořit přímá reference na vektor, **nikoliv kopie**! 
+   `std::vector<double>& vektor = s->getHistorie();`
+2. Cyklus prochází vektor přes iterátor záměrně bez třetího parametru pro posun:
+   `for(auto it = vektor.begin(); it != vektor.end(); /* bez posunu */)`
+3. Uvnitř se přes dereferenci (`*it`) vyhodnotí podmínka. Pokud platí, smaže se prvek přes `it = vektor.erase(it)` (tím se získá nová pozice). Pokud neplatí, provede se ruční posun `++it`.
+
+**Algoritmus 3: Vytvoření a návrat nového vektoru (Filtrování)**
+*   Používá se, když nesmíme data mazat, ale musíme vrátit novou podmnožinu. Návratový typ je samotný vektor: `std::vector<double> ziskejNeco(Senzor* s)`
+*   Na začátku těla funkce se založí prázdný vektor (např. `vysledek`).
+*   Přes range-based for cyklus se projdou stará data a pokud splní podmínku, vloží se do nového přes `vysledek.push_back(hodnota)`.
+*   Na úplném konci se zavolá `return vysledek;`.
 
 ---
 
 ## 7. Hlavní program (`main.cpp`) a bezpečný průchod
 
-Celá funkce `main` musí mít chronologickou strukturu, aby správně otestovala polymorfismus a zamezila úniku paměti. 
+Celá funkce `main` musí mít chronologickou strukturu pro bezpečný test polymorfismu.
 
 1.  **Ověření výchozího stavu:** Výpis statického čítače (měl by být 0).
-2.  **Vytvoření struktury a alokace:** Vytvoří se pole/kolekce ukazatelů na bázovou třídu. Přes klíčové slovo `new` se do něj vloží různé odvozené objekty.
+2.  **Vytvoření struktury a alokace:** Vytvoří se `std::vector<Senzor*>`, do kterého se přes operátor `new` vloží různé odvozené objekty.
 3.  **Naplnění daty:** Přes indexy a operátor šipky se objektům přidají data (např. `kolekce[0]->pridejData(...)`).
-4.  **Polymorfní průchod (Hlavní cyklus):** Klasický cyklus projde celou kolekci a zavolá virtuální metody. Díky polymorfismu se každý prvek zachová podle svého skutečného typu (potomka), ačkoliv cyklus vidí jen bázovou třídu.
-5.  **Spuštění algoritmů:** Zavolají se externí funkce (algoritmy) a předá se jim konkrétní prvek z kolekce.
-6.  **Test operátorů:** Vytvoří se nezávislé lokální proměnné zabalené v bloku `{ ... }` na zásobníku, provede se test operátorů `+=` a `==` a jejich výpis `<<`.
-7.  **Úklid paměti (`delete`):** Než program skončí, musí se projít alokovaná kolekce a ručně smazat objekty (volání `delete`).
-8.  **Závěrečná kontrola:** Výpis čítače musí ukázat opět 0, což potvrzuje, že proběhly všechny destruktory.
+4.  **Polymorfní průchod (Hlavní cyklus):** Range-based for cyklus pro ukazatele: `for(Senzor* s : senzory)`. Zavolají se na něm virtuální metody (každý se chová dle svého typu).
+5.  **Spuštění algoritmů:** Zavolají se externí funkce a předá se jim konkrétní ukazatel (např. `algoritmus(senzory[0])`).
+6.  **Test operátorů na lokálních proměnných:**
+    Vytvoří se daný druh odvozené třídy na zásobníku bez `new` (např. `LokalA("nazev", hodnota)`). Otestují se operátory `+=`, `==` a výpis `<<`.
+7.  **Úklid paměti (`delete`):** Než program skončí, projde se původní vektor ukazatelů a ručně se smažou objekty (`delete s;`).
+8.  **Závěrečná kontrola:** Výpis čítače musí ukázat opět 0.
