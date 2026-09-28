@@ -2,14 +2,15 @@
 
 ## 1. Práce s vektory (`std::vector`)
 Základní operace pro rychlé použití v algoritmech a metodách:
+
 *   `vektor.push_back(hodnota)` – Vloží prvek úplně na konec.
 *   `vektor.insert(vektor.end(), jiny.begin(), jiny.end())` – Vloží celý jiný vektor na konec aktuálního.
 *   `vektor.size()` – Vrátí aktuální počet prvků (hodí se pro výpisy a cykly).
 *   `vektor.back()` – Vrátí hodnotu úplně posledního prvku ve vektoru. *(Pozor: Před zavoláním by měl mít vektor velikost alespoň 1, jinak program spadne).*
 *   `vektor.erase(iterator)` – Smaže prvek, na který ukazuje iterátor (typicky se používá uvnitř cyklu).
+*   `vektor.empty()` – Vrátí `true` (1), pokud je vektor prázdný. Nutné používat jako pojistku na začátku algoritmů nebo před čtením prvků (např. před `.back()`).
 
 ---
-
 ## 2. Přetěžování operátorů (Přehled a .h deklarace)
 
 | Operátor | K čemu slouží v praxi | Pravidla pro `const` (Deklarace v `.h`) |
@@ -34,3 +35,29 @@ Základní operace pro rychlé použití v algoritmech a metodách:
 | **`=`** | `Stanice& operator=(const Stanice& pravy);` | `Stanice& Stanice::operator=(const Stanice& pravy) {`<br>&nbsp;&nbsp;`if (this != &pravy) {`<br>&nbsp;&nbsp;&nbsp;&nbsp;`this->smog = pravy.smog;`<br>&nbsp;&nbsp;`<br>&nbsp;&nbsp;`return *this;`<br>`}` | `Stanice s1("Brno");`<br>`Stanice s2("Praha");`<br>`s1 = s2;` |
 | **`[]`** | `double& operator[](int index);` | `double& Stanice::operator[](int index) {`<br>&nbsp;&nbsp;`return this->historie[index];`<br>`}` | `Stanice s("Ostrava");`<br>`s += 25.5;`<br>`double t = s[0];` |
 | **`()`** | `void operator()(double zmena);` | `void Stanice::operator()(double zmena) {`<br>&nbsp;&nbsp;`this->smog += zmena;`<br>`}` | `Stanice s("Opava");`<br>`s(1.5);` |
+
+---
+## Funktor && Indexor
+
+**1. Operátor volání funkce `()` (Funktor)**
+*   **`.h`:** `int operator()(double zmena);`[cite: 1]
+*   **`.cpp`:** `int Trida::operator()(double zmena) { /* vnitřní logika a výpočet */ return vysledek; }`[cite: 1]
+*   **`main()`:** `int vysledek = objekt(15.5);` (Zavolá se jako funkce přímo na objektu)[cite: 1]
+
+**2. Operátor indexace `[]`**
+*   **`.h`:** `double& operator[](int index);`[cite: 1]
+*   **`.cpp`:** `double& Trida::operator[](int index) { return this->historie[index]; }`[cite: 1]
+*   **`main()`:** `double t = objekt[0];` (Čtení) nebo `objekt[0] = 50.0;` (Zápis)[cite: 1]
+
+**3. Inkrementace `++` (Prefix a Postfix)**
+*   **`.h`:** `Trida& operator++();` (Prefix) a `Trida operator++(int);` (Postfix)[cite: 1]
+*   **`.cpp`:**
+    ```cpp
+    Trida& Trida::operator++() {
+        this->hodnota += 1.0;
+        return *this;
+    }
+    ```[cite: 1]
+*   **`main()`:** `++objekt;` nebo `objekt++;`[cite: 1]
+
+---
