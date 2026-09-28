@@ -2,7 +2,36 @@
 
 Tento dokument slouží jako univerzální průvodce pro objektově orientované zkouškové projekty v C++. Shrnuje pravidla rozdělení kódu, syntaxi operátorů, algoritmy a bezpečnou práci s pamětí.
 
+
+
+
+## Pravidla zápisu pointerů a referencí
+
+*   **V hlavičkovém souboru (`.h`):**
+    *   **Parametry:** Pro objekty nebo složitější typy použijeme referenci, aby se objekt nekopíroval (např. `void Tisk(const Zakaznik& z)`).
+    *   **Gettery:** Konstantní vrací kopii: `std::vector<double> getHistorie() const;`. Pro referenci přidáme `&`: `std::vector<double>& getHistorieRef();`.
+*   **V implementaci (`.cpp`):**
+    *   **Reference (`&`):** Znamená přímý odkaz na data, používá se typicky u získání originálního vektoru: `std::vector<double>& vektor = objekt->getHistorieRef();`.
+*   **V `main()`:**
+    *   Při dynamické alokaci tvoříme ukazatel `*` s `new` (např. `Senzor* s = new SenzorTeploty()`).
+    *   Pro přístup k metodám dynamicky alokovaných objektů používáme šipku `->` (např. `s->vypisInfo()`).
+    *   Pokud potřebujeme manipulovat s původním ukazatelem, např. ho prohodit s jiným, použijeme referenci na ukazatel `*&` (např. `void Prohod(Zakaznik*& z1, Zakaznik*& z2)`).
+*   **V algoritmech:**
+    *   Když procházíme celou kolekci, algoritmus přijímá kontejner referencí. Abychom zamezili přepisování, přidáme `const` (např. `void zpracuj(const std::vector<Senzor*>& kolekce)`).
+    *   Když iterujeme pomocí `it`, pro zisk hodnoty z něj vždy děláme dereferenci `*` (např. `if(*it < 0)`).
+    *   Pointer `*` používáme, když chceme pracovat s objektem jako celkem. Reference `&` pokud potřebujeme změnit samotná data.
+    *   Pro získání celého vektoru použijeme *getter* vracející celý vektor, u kterého (pokud čteme a hledáme maximum apod.) využijeme konstatní metodu: `std::vector<double> vysledek = s->getHistorie();`.
+
+## Dodatečné funkce a zápis
+
+*   **Metoda `back()`:** Slouží k rychlému zisku poslední hodnoty vektoru. Zápis: `double posledni = historie.back();`.
+*   **Datový typ `size_t`:** Nezaporny typ odvozený z integeru. Ideální pro indexování nebo získání velikosti kontejneru. Zápis: `size_t pocet = historie.size();.
+*   **`std::sort`:** Seřazení vektoru.
+    *   Zápis (vzestupně): `std::sort(vektor.begin(), vektor.end());`.
+    *   Střední hodnota v liché kolekci se najde jako `size()/2`, u sudé kolekce `((size()/2 - 1) + size()/2) / 2.
 ---
+
+
 
 ## 1. Zlatá pravidla pro `const` (Slib, že nic nezměním)
 Klíčové slovo `const` se v třídách používá na dvou místech. **Co slíbíš v `.h`, to musíš do písmene opsat v `.cpp`.**
